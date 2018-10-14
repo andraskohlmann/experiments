@@ -18,5 +18,6 @@ def audio_segment_generator(sample_size, batch_size, path, ext):
 
 def audio_segments_from_single_file(sample_size, path_to_file):
     audio_bytes, ff, sec = audio_to_array(path_to_file, path_to_file.split('.')[-1])
+    audio_bytes = normalize_audio(audio_bytes)
     sample_num = int(ff * sec)
     return [audio_bytes[i:i + sample_size] for i in range(0, sample_num - sample_size, sample_size)]

@@ -22,7 +22,7 @@ def conv_ae_1d(input_shape, encoder_setup, decoder_setup):
     encoded = encoder(input_layer, encoder_setup)
     encoded = Conv1D(1, 3, padding='same')(encoded)
     decoded = decoder(encoded, decoder_setup)
-    decoded = Conv1D(1, (1), activation='sigmoid', padding='same')(decoded)
+    decoded = Conv1D(1, (1), activation='tanh', padding='same')(decoded)
 
     ae = Model(input_layer, decoded)
     return ae
@@ -46,7 +46,7 @@ def conv_lstm_ae_1d(timesteps, input_shape, encoder_setup, lstm_num, decoder_set
         lstm = LSTM(units=units, return_sequences=True if i < lstm_num - 1 else False)(lstm)
     lstm = Reshape((*lstm._keras_shape[1:], 1))(lstm)
     decoded = decoder(lstm, decoder_setup)
-    decoded = Conv1D(1, (1), activation='sigmoid', padding='same')(decoded)
+    decoded = Conv1D(1, (1), activation='tanh', padding='same')(decoded)
 
     ae = Model(input_layer, decoded)
     return ae
