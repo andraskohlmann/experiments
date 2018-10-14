@@ -1,6 +1,6 @@
 import numpy as np
 
-from preprocessing.audio_import import get_files_from_library, audio_to_array
+from preprocessing.audio_import import get_files_from_library, audio_to_array, normalize_audio
 
 
 def audio_segment_generator(sample_size, batch_size, path, ext):
@@ -12,7 +12,7 @@ def audio_segment_generator(sample_size, batch_size, path, ext):
         samples = np.zeros((batch_size, sample_size))
         for i, idx in enumerate(indices):
             frame = np.random.randint(0, len(audio_bytes[idx]) - sample_size)
-            samples[i] = audio_bytes[idx][frame:frame + sample_size]
+            samples[i] = normalize_audio(audio_bytes[idx][frame:frame + sample_size])
         yield np.expand_dims(samples, -1), np.expand_dims(samples, -1)
 
 
