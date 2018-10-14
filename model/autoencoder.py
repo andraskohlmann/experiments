@@ -1,5 +1,5 @@
 from keras import Input, Model
-from keras.layers import Conv1D, UpSampling1D, Flatten, LSTM, Reshape
+from keras.layers import Conv1D, UpSampling1D, LSTM, Reshape, TimeDistributed
 
 
 def encoder(input_layer, encoder_setup):
@@ -28,20 +28,23 @@ def conv_ae_1d(input_shape, encoder_setup, decoder_setup):
     return ae
 
 
-def conv_lstm_ae_1d(input_shape, encoder_setup, lstm_num, decoder_setup):
-    assert encoder_setup.shape[1] == 3
-    assert decoder_setup.shape[1] == 3
+def encoder_td(input_layer, encoder_setup):
+    x = input_layer
+    for filters, kernel_size, strides in encoder_setup:
+        x = TimeDistributed(
+            Conv1D(filters=filters, kernel_size=(kernel_size), strides=strides, activation='relu', padding='same'))(x)
+    return x
 
-    input_layer = Input(shape=input_shape)
-    encoded = encoder(input_layer, encoder_setup)
-    encoded = Flatten()(encoded)
-    units = encoded.output_shape
 
-    lstm = encoded
-    for _ in range(lstm_num):
-        lstm = LSTM(units=units)(lstm)
-
-    lstm = Reshape((units, 1))(lstm)
+def conv_lstm_ae_1d(timesteps, input_shape, encoder_setup, lstm_num, decoder_setup):
+    input_layer = Input(shape=(timesteps, *input_shape))
+    encoded = encoder_td(input_layer, encoder_setup)
+    encoded = TimeDistributed(Conv1D(1, 3, padding='same'))(encoded)
+    units = encoded._keras_shape[-2]
+    lstm = Reshape(encoded._keras_shape[1:-1])(encoded)
+    for i in range(lstm_num):
+        lstm = LSTM(units=units, return_sequences=True if i < lstm_num - 1 else False)(lstm)
+    lstm = Reshape((*lstm._keras_shape[1:], 1))(lstm)
     decoded = decoder(lstm, decoder_setup)
     decoded = Conv1D(1, (1), activation='sigmoid', padding='same')(decoded)
 
