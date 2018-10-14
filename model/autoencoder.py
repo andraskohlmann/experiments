@@ -20,6 +20,7 @@ def decoder(input_layer, decoder_setup):
 def conv_ae_1d(input_shape, encoder_setup, decoder_setup):
     input_layer = Input(shape=input_shape)
     encoded = encoder(input_layer, encoder_setup)
+    encoded = Conv1D(1, 3, padding='same')(encoded)
     decoded = decoder(encoded, decoder_setup)
     decoded = Conv1D(1, (1), activation='sigmoid', padding='same')(decoded)
 
