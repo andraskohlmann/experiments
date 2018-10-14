@@ -25,8 +25,8 @@ model = conv_ae_1d(input_shape=(16384, 1), encoder_setup=encoder_setup, decoder_
 print(model.summary())
 
 b = audio_segment_generator(16384, 2, '.', 'mp3')
-# d = next(b)
-# print(d[0].shape)
+d = next(b)
+print(d[0].shape)
 
 model.compile(optimizer='adam', loss='binary_crossentropy')
 
