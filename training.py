@@ -1,5 +1,7 @@
+import numpy as np
+
 from model.autoencoder import conv_ae_1d
-from preprocessing.generator import audio_segment_generator
+from preprocessing.generator import audio_segment_generator, audio_segments_from_single_file
 
 encoder_setup = [
     (64, (5), 4),
@@ -23,3 +25,8 @@ print(model.summary())
 b = audio_segment_generator(1000, 2, '.', 'mp3')
 d = next(b)
 print(d.shape)
+
+validation_samples = audio_segments_from_single_file(16384, 'example.mp3')
+
+for s in validation_samples:
+    pred = model.predict(np.expand_dims(np.expand_dims(s, -1), 0))

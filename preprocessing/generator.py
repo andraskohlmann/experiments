@@ -14,3 +14,9 @@ def audio_segment_generator(sample_size, batch_size, path, ext):
             frame = np.random.randint(0, len(audio_bytes[idx]) - sample_size)
             samples[i] = audio_bytes[idx][frame:frame + sample_size]
         yield samples
+
+
+def audio_segments_from_single_file(sample_size, path_to_file):
+    audio_bytes, ff, sec = audio_to_array(path_to_file, path_to_file.split('.')[-1])
+    sample_num = int(ff * sec)
+    return [audio_bytes[i:i + sample_size] for i in range(0, sample_num - sample_size, sample_size)]
