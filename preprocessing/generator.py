@@ -1,13 +1,14 @@
+import glob
+import os
+
+import cv2
 import numpy as np
+from scipy.io import wavfile
+from spectogram import pretty_spectrogram, create_mel_filter, make_mel, butter_bandpass_filter, mel_to_spectrogram, \
+    invert_pretty_spectrogram
 
 from preprocessing.audio_import import (audio_to_array, get_files_from_library,
                                         normalize_audio)
-from spectogram import pretty_spectrogram, create_mel_filter, make_mel, butter_bandpass_filter, mel_to_spectrogram, invert_pretty_spectrogram
-
-from scipy.io import wavfile
-import cv2
-import glob
-import os
 
 
 def audio_segment_generator(sample_size, batch_size, path, ext):
@@ -32,7 +33,7 @@ def audio_segments_from_single_file(sample_size, path_to_file):
     return [audio_bytes[i:i + sample_size] for i in range(0, sample_num - sample_size, sample_size)]
 
 
-def mel_spec_images_from_file():
+def mel_spec_images_from_file(filename, output_folder):
     ### Parameters ###
     fft_size = 2048  # window size for the FFT
     step_size = 128  # distance to slide along the window (in time)
@@ -46,14 +47,14 @@ def mel_spec_images_from_file():
     start_freq = 100  # Hz # What frequency to start sampling our melS from
     end_freq = 3000  # Hz # What frequency to stop sampling our melS from
     # Grab your wav and filter it
-    mywav = 'nocturne.wav'
-    rate, data = wavfile.read(mywav)
+    # mywav = 'nocturne.wav'
+    rate, data = wavfile.read(filename)
     data = butter_bandpass_filter(data, lowcut, highcut, rate, order=1)
 
     # iterating thru one second segments
     for i in range(0, len(data), rate):
         segment = data[i:i + rate]
-        #create spec
+        # create spec
         wav_spectrogram = pretty_spectrogram(segment.astype('float64'), fft_size=fft_size,
                                              step_size=step_size, log=True, thresh=spec_thresh)
         # Generate the mel filters
@@ -67,11 +68,11 @@ def mel_spec_images_from_file():
         # converting to the [0..1] domain
         mel_spec = mel_spec.astype(float) / spec_thresh + 1
         # saving as image
-        cv2.imwrite('./out/segment_{0:04d}.png'.format(i//rate), mel_spec * 255)
+        cv2.imwrite(os.path.join(output_folder, 'segment_{0:04d}.png'.format(i // rate)), mel_spec * 255)
 
 
-def audio_from_mel_spec():
-        ### Parameters ###
+def audio_from_mel_spec(input_folder, filename):
+    ### Parameters ###
     fft_size = 2048  # window size for the FFT
     step_size = 128  # distance to slide along the window (in time)
     # threshold for spectrograms (lower filters out more noise)
@@ -84,9 +85,9 @@ def audio_from_mel_spec():
     start_freq = 100  # Hz # What frequency to start sampling our melS from
     end_freq = 3000  # Hz # What frequency to stop sampling our melS from
 
-    files = files = glob.glob(os.path.join('out', '*' + 'png'))
+    files = glob.glob(os.path.join(input_folder, '*' + 'png'))
     combined = np.ndarray((n_mel_freq_components, 0), dtype=np.float16)
-    
+
     # select only a couple segments
     for segment in files[:20]:
         segment_data = cv2.imread(segment, cv2.IMREAD_GRAYSCALE)
@@ -109,8 +110,10 @@ def audio_from_mel_spec():
     inverted_mel_audio = invert_pretty_spectrogram(np.transpose(mel_inverted_spectrogram), fft_size=fft_size,
                                                    step_size=step_size, log=True, n_iter=10)
     # multiplying with a magic number and exporting as wav
-    wavfile.write('restored.wav',44100, inverted_mel_audio * 255)
+    wavfile.write(filename, 44100, inverted_mel_audio * 255)
 
 
-mel_spec_images_from_file()
-audio_from_mel_spec()
+for i, input_wav_file in enumerate(glob.glob(os.path.join('../in', '*' + 'wav'))):
+    mel_spec_images_from_file(input_wav_file, output_folder='../out')
+
+audio_from_mel_spec(input_folder='../out', filename='restored.wav')
