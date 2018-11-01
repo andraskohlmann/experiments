@@ -1,20 +1,20 @@
 from keras import Input, Model
-from keras.layers import Conv1D, LSTM, Reshape, TimeDistributed, Conv2D, Conv2DTranspose
+from keras.layers import LSTM, Reshape, TimeDistributed, Conv2D, Conv2DTranspose
 
 
-def encoder(input_layer, encoder_setup):
+def encoder(input_layer, encoder_setup, trainable=True):
     x = input_layer
     for filters, kernel_size, strides in encoder_setup:
-        x = Conv2D(filters=filters, kernel_size=kernel_size, strides=strides, activation='relu', padding='same')(x)
+        x = Conv2D(filters=filters, kernel_size=kernel_size, strides=strides, activation='relu', padding='same',
+                   trainable=trainable)(x)
     return x
 
 
-def decoder(input_layer, decoder_setup):
+def decoder(input_layer, decoder_setup, trainable=True):
     x = input_layer
     for filters, kernel_size, upsampling in decoder_setup:
         x = Conv2DTranspose(filters=filters, kernel_size=kernel_size, strides=upsampling, activation='relu',
-                            padding='same')(x)
-        # x = UpSampling2D(size=upsampling)(x)
+                            padding='same', trainable=trainable)(x)
     return x
 
 
@@ -29,25 +29,28 @@ def conv_ae_2d(input_shape, encoder_setup, decoder_setup):
     return ae
 
 
-def encoder_td(input_layer, encoder_setup):
+def encoder_td(input_layer, encoder_setup, trainable=True):
     x = input_layer
     for filters, kernel_size, strides in encoder_setup:
         x = TimeDistributed(
-            Conv2D(filters=filters, kernel_size=kernel_size, strides=strides, activation='relu', padding='same'))(x)
+            Conv2D(filters=filters, kernel_size=kernel_size, strides=strides, activation='relu', padding='same', ),
+            trainable=trainable)(x)
     return x
 
 
 def conv_lstm_ae_1d(timesteps, input_shape, encoder_setup, lstm_num, decoder_setup):
     input_layer = Input(shape=(timesteps, *input_shape))
-    encoded = encoder_td(input_layer, encoder_setup)
-    encoded = TimeDistributed(Conv1D(1, 3, padding='same'))(encoded)
-    units = encoded._keras_shape[-2]
-    lstm = Reshape(encoded._keras_shape[1:-1])(encoded)
+    encoded = encoder_td(input_layer, encoder_setup, trainable=False)
+    encoded = TimeDistributed(Conv2D(4, 3, padding='same'), trainable=False)(encoded)
+    times = encoded._keras_shape[1]
+    encoded_shape = encoded._keras_shape[2:]
+    units = encoded_shape[0] * encoded_shape[1] * encoded_shape[2]
+    lstm = Reshape((times, units))(encoded)
     for i in range(lstm_num):
         lstm = LSTM(units=units, return_sequences=True if i < lstm_num - 1 else False)(lstm)
-    lstm = Reshape((*lstm._keras_shape[1:], 1))(lstm)
-    decoded = decoder(lstm, decoder_setup)
-    decoded = Conv1D(1, (1), activation='tanh', padding='same')(decoded)
+    lstm = Reshape(encoded_shape)(lstm)
+    decoded = decoder(lstm, decoder_setup, trainable=False)
+    decoded = Conv2D(1, 1, activation='sigmoid', padding='same', trainable=False)(decoded)
 
     ae = Model(input_layer, decoded)
     return ae
