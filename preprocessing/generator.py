@@ -113,7 +113,14 @@ def audio_from_mel_spec(input_folder, filename):
     wavfile.write(filename, 44100, inverted_mel_audio * 255)
 
 
-for i, input_wav_file in enumerate(glob.glob(os.path.join('../in', '*' + 'wav'))):
-    mel_spec_images_from_file(input_wav_file, output_folder='../out')
+for input_wav_file in glob.glob(os.path.join('..', 'in', '*' + 'wav')):
+    audio_name = os.path.split(input_wav_file)[-1].split('.')[0]
+    os.makedirs(os.path.join('..', 'out', 'segments', audio_name))
+    mel_spec_images_from_file(input_wav_file, output_folder=os.path.join('..', 'out', 'segments', audio_name))
 
-audio_from_mel_spec(input_folder='../out', filename='restored.wav')
+if not os.path.exists(os.path.join('..', 'out', 'restored')):
+    os.makedirs(os.path.join('..', 'out', 'restored'))
+for in_dir in glob.glob(os.path.join('..', 'out', 'segments', '*', '')):
+    audio_name = os.path.split(os.path.split(in_dir)[0])[-1]
+    audio_from_mel_spec(input_folder=in_dir,
+                        filename=os.path.join('..', 'out', 'restored', audio_name + '_restored.wav'))
