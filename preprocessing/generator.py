@@ -1,14 +1,17 @@
 import glob
 import os
+import shutil
 
 import cv2
 import numpy as np
+from keras.utils import Sequence
 from scipy.io import wavfile
-from spectogram import pretty_spectrogram, create_mel_filter, make_mel, butter_bandpass_filter, mel_to_spectrogram, \
-    invert_pretty_spectrogram
 
 from preprocessing.audio_import import (audio_to_array, get_files_from_library,
                                         normalize_audio)
+from preprocessing.spectogram import pretty_spectrogram, create_mel_filter, make_mel, butter_bandpass_filter, \
+    mel_to_spectrogram, \
+    invert_pretty_spectrogram
 
 
 def audio_segment_generator(sample_size, batch_size, path, ext):
@@ -36,7 +39,7 @@ def audio_segments_from_single_file(sample_size, path_to_file):
 def mel_spec_images_from_file(filename, output_folder):
     ### Parameters ###
     fft_size = 2048  # window size for the FFT
-    step_size = 128  # distance to slide along the window (in time)
+    step_size = 164  # distance to slide along the window (in time)
     # threshold for spectrograms (lower filters out more noise)
     spec_thresh = 4
     lowcut = 500  # Hz # Low cut for our butter bandpass filter
@@ -68,13 +71,14 @@ def mel_spec_images_from_file(filename, output_folder):
         # converting to the [0..1] domain
         mel_spec = mel_spec.astype(float) / spec_thresh + 1
         # saving as image
-        cv2.imwrite(os.path.join(output_folder, 'segment_{0:04d}.png'.format(i // rate)), mel_spec * 255)
+        if mel_spec.shape == (64, 64):
+            cv2.imwrite(os.path.join(output_folder, 'segment_{0:04d}.png'.format(i // rate)), mel_spec * 255)
 
 
 def audio_from_mel_spec(input_folder, filename):
     ### Parameters ###
     fft_size = 2048  # window size for the FFT
-    step_size = 128  # distance to slide along the window (in time)
+    step_size = 164  # distance to slide along the window (in time)
     # threshold for spectrograms (lower filters out more noise)
     spec_thresh = 4
     lowcut = 500  # Hz # Low cut for our butter bandpass filter
@@ -113,14 +117,34 @@ def audio_from_mel_spec(input_folder, filename):
     wavfile.write(filename, 44100, inverted_mel_audio * 255)
 
 
-for input_wav_file in glob.glob(os.path.join('..', 'in', '*' + 'wav')):
-    audio_name = os.path.split(input_wav_file)[-1].split('.')[0]
-    os.makedirs(os.path.join('..', 'out', 'segments', audio_name))
-    mel_spec_images_from_file(input_wav_file, output_folder=os.path.join('..', 'out', 'segments', audio_name))
+def generate_images_from_audio_files(folder_name):
+    if os.path.exists(os.path.join('out', folder_name)):
+        shutil.rmtree(os.path.join('out', folder_name))
+        os.makedirs(os.path.join('out', folder_name))
+    for input_wav_file in glob.glob(os.path.join('in', '*' + 'wav')):
+        audio_name = os.path.split(input_wav_file)[-1].split('.')[0]
+        os.makedirs(os.path.join('out', folder_name, audio_name))
+        mel_spec_images_from_file(input_wav_file, output_folder=os.path.join('out', folder_name, audio_name))
 
-if not os.path.exists(os.path.join('..', 'out', 'restored')):
-    os.makedirs(os.path.join('..', 'out', 'restored'))
-for in_dir in glob.glob(os.path.join('..', 'out', 'segments', '*', '')):
-    audio_name = os.path.split(os.path.split(in_dir)[0])[-1]
-    audio_from_mel_spec(input_folder=in_dir,
-                        filename=os.path.join('..', 'out', 'restored', audio_name + '_restored.wav'))
+
+def restore_audio_from_images(input_folder_name, output_folder_name):
+    if not os.path.exists(os.path.join('out', output_folder_name)):
+        os.makedirs(os.path.join('out', output_folder_name))
+    for in_dir in glob.glob(os.path.join('out', input_folder_name, '*', '')):
+        audio_name = os.path.split(os.path.split(in_dir)[0])[-1]
+        audio_from_mel_spec(input_folder=in_dir,
+                            filename=os.path.join('out', output_folder_name, audio_name + '_restored.wav'))
+
+
+class ImageSequence(Sequence):
+    def __init__(self, image_folders, batch_size):
+        self.files = sorted(glob.glob(os.path.join(image_folders, '*.png')))
+        self.batch_size = batch_size
+
+    def __len__(self):
+        return len(self.files) // self.batch_size
+
+    def __getitem__(self, index):
+        images = np.expand_dims(np.array([cv2.imread(self.files[i], cv2.IMREAD_GRAYSCALE) / 255. for i in
+                                          range(index * self.batch_size, (index + 1) * self.batch_size)]), -1)
+        return images, images
