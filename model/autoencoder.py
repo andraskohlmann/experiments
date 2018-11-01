@@ -1,5 +1,5 @@
 from keras import Input, Model
-from keras.layers import Conv1D, LSTM, Reshape, TimeDistributed, Conv2D, UpSampling2D
+from keras.layers import Conv1D, LSTM, Reshape, TimeDistributed, Conv2D, Conv2DTranspose
 
 
 def encoder(input_layer, encoder_setup):
@@ -12,15 +12,16 @@ def encoder(input_layer, encoder_setup):
 def decoder(input_layer, decoder_setup):
     x = input_layer
     for filters, kernel_size, upsampling in decoder_setup:
-        x = Conv2D(filters=filters, kernel_size=kernel_size, activation='relu', padding='same')(x)
-        x = UpSampling2D(size=upsampling)(x)
+        x = Conv2DTranspose(filters=filters, kernel_size=kernel_size, strides=upsampling, activation='relu',
+                            padding='same')(x)
+        # x = UpSampling2D(size=upsampling)(x)
     return x
 
 
 def conv_ae_2d(input_shape, encoder_setup, decoder_setup):
     input_layer = Input(shape=input_shape)
     encoded = encoder(input_layer, encoder_setup)
-    encoded = Conv2D(1, 3, padding='same')(encoded)
+    encoded = Conv2D(4, 3, padding='same')(encoded)
     decoded = decoder(encoded, decoder_setup)
     decoded = Conv2D(1, 1, activation='sigmoid', padding='same')(decoded)
 
