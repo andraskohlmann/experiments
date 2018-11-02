@@ -8,7 +8,7 @@ from keras.callbacks import ModelCheckpoint
 
 from model.autoencoder import conv_lstm_ae_1d
 from preprocessing.generator import ImageSequence, \
-    restore_audio_from_images
+    restore_audio_from_images, generate_images_from_audio_files
 
 encoder_setup = [
     (128, 3, 2),
@@ -24,8 +24,9 @@ decoder_setup = [
     (128, 3, 2)
 ]
 
-# generate_images_from_audio_files('segments')
-
+generate_images_from_audio_files('segments')
+restore_audio_from_images('segments', 'segments_restored')
+exit()
 model = conv_lstm_ae_1d(timesteps=10, input_shape=(64, 64, 1), encoder_setup=encoder_setup, lstm_num=1,
                         decoder_setup=decoder_setup)
 print(model.summary())
