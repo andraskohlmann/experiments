@@ -136,9 +136,14 @@ class ImageSequence(Sequence):
         self.batch_size = batch_size
 
     def __len__(self):
-        return len(self.files) // self.batch_size
+        return len(self.files) * 100 // self.batch_size
+
+    def random_crop(self, image):
+        h, w = image.shape[0:2]
+        start = np.random.randint(0, w - h)
+        return image[:, start:start + h]
 
     def __getitem__(self, index):
-        images = np.expand_dims(np.array([cv2.imread(self.files[i], cv2.IMREAD_GRAYSCALE) / 255. for i in
+        images = np.expand_dims(np.array([self.random_crop(cv2.imread(self.files[i % len(self.files)], cv2.IMREAD_GRAYSCALE) / 255.) for i in
                                           range(index * self.batch_size, (index + 1) * self.batch_size)]), -1)
         return images, images
