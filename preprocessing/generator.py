@@ -134,6 +134,7 @@ class ImageSequence(Sequence):
     def __init__(self, image_folders, batch_size):
         self.files = sorted(glob.glob(os.path.join(image_folders, '*.png')))
         self.batch_size = batch_size
+        self.images = [cv2.imread(self.files[i], cv2.IMREAD_GRAYSCALE) / 255. for i in range(len(self.files))]
 
     def __len__(self):
         return len(self.files) * 100 // self.batch_size
@@ -144,6 +145,6 @@ class ImageSequence(Sequence):
         return image[:, start:start + h]
 
     def __getitem__(self, index):
-        images = np.expand_dims(np.array([self.random_crop(cv2.imread(self.files[i % len(self.files)], cv2.IMREAD_GRAYSCALE) / 255.) for i in
+        images = np.expand_dims(np.array([self.random_crop(self.images[i % len(self.files)]) for i in
                                           range(index * self.batch_size, (index + 1) * self.batch_size)]), -1)
         return images, images

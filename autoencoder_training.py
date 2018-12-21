@@ -40,18 +40,25 @@ model.compile(optimizer='adam', loss='mse')
 checkpoint_path = os.path.join('checkpoints', 'epoch-{epoch:02d}-{loss:.4f}.hdf5')
 checkpoint = ModelCheckpoint(checkpoint_path, monitor='loss', verbose=1, save_best_only=True, mode='min')
 
-model.fit_generator(image_generator, epochs=20, callbacks=[])
-model.save_weights(os.path.join('weights', 'model.h5'))
+# model.fit_generator(image_generator, epochs=20, callbacks=[])
+# model.save_weights(os.path.join('weights', 'model.h5'))
 
 model.load_weights(os.path.join('weights', 'model.h5'))
 
-validation_samples = glob.glob(os.path.join('out', 'segments', '01', '*.png'))
+validation_samples = glob.glob(os.path.join('out', 'segments', '*', '*.png'))
 
 if os.path.exists(os.path.join('out', 'predictions')):
     shutil.rmtree(os.path.join('out', 'predictions'))
 os.makedirs(os.path.join('out', 'predictions', '01'))
+
 for i, s in enumerate(validation_samples):
-    pred = model.predict(np.expand_dims(np.expand_dims(cv2.imread(s, cv2.IMREAD_GRAYSCALE) / 255., -1), 0))
-    cv2.imwrite(os.path.join('out', 'predictions', '01', '{0:04d}.png'.format(i)), np.squeeze(pred * 255))
+    spec = cv2.imread(s, cv2.IMREAD_GRAYSCALE) / 255.
+    spec_shape = spec.shape
+    print(spec_shape)
+    preds = np.zeros((*spec_shape, 1))
+    for window in range(0, spec_shape[1] - spec_shape[0], spec_shape[0]):
+        preds[:, window:window + spec_shape[0]] = model.predict(np.expand_dims(
+            np.expand_dims(spec[:, window:window + spec_shape[0]], -1), 0))
+    cv2.imwrite(os.path.join('out', 'predictions', '{:02d}'.format(i), '{0:04d}.png'.format(i)), np.squeeze(preds * 255))
 
 restore_audio_from_images('predictions', 'predictions_restored')
