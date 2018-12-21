@@ -49,7 +49,6 @@ validation_samples = glob.glob(os.path.join('out', 'segments', '*', '*.png'))
 
 if os.path.exists(os.path.join('out', 'predictions')):
     shutil.rmtree(os.path.join('out', 'predictions'))
-os.makedirs(os.path.join('out', 'predictions', '01'))
 
 for i, s in enumerate(validation_samples):
     spec = cv2.imread(s, cv2.IMREAD_GRAYSCALE) / 255.
