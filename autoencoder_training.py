@@ -59,6 +59,8 @@ for i, s in enumerate(validation_samples):
     for window in range(0, spec_shape[1] - spec_shape[0], spec_shape[0]):
         preds[:, window:window + spec_shape[0]] = model.predict(np.expand_dims(
             np.expand_dims(spec[:, window:window + spec_shape[0]], -1), 0))
+
+    os.makedirs(os.path.join('out', 'predictions', '{:02d}'.format(i)))
     cv2.imwrite(os.path.join('out', 'predictions', '{:02d}'.format(i), '{0:04d}.png'.format(i)), np.squeeze(preds * 255))
 
 restore_audio_from_images('predictions', 'predictions_restored')

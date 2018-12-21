@@ -82,17 +82,10 @@ def audio_from_mel_spec(input_folder, filename):
     start_freq = 28  # Hz # What frequency to start sampling our melS from
     end_freq = 4000  # Hz # What frequency to stop sampling our melS from
 
-    files = glob.glob(os.path.join(input_folder, '*' + 'png'))
-    combined = np.ndarray((n_mel_freq_components, 0), dtype=np.float16)
+    file = glob.glob(os.path.join(input_folder, '*' + '.png'))[0]
 
-    # select only a couple segments
-    for segment in files:
-        segment_data = cv2.imread(segment, cv2.IMREAD_GRAYSCALE)
-        segment_data = segment_data[:, :512]
-        # appending them together
-        combined = np.append(combined, segment_data, axis=1)
-    # visualize appended spectogram 
-    cv2.imwrite('combined.png', combined.astype(float))
+    combined = cv2.imread(file, cv2.IMREAD_GRAYSCALE)
+
     # converting back to the original domain
     combined = (combined / 255. - 1) * spec_thresh
     # Generate the mel filters
@@ -126,6 +119,7 @@ def restore_audio_from_images(input_folder_name, output_folder_name):
         os.makedirs(os.path.join('out', output_folder_name))
     for in_dir in glob.glob(os.path.join('out', input_folder_name, '*', '')):
         audio_name = os.path.split(os.path.split(in_dir)[0])[-1]
+        print(in_dir, audio_name)
         audio_from_mel_spec(input_folder=in_dir,
                             filename=os.path.join('out', output_folder_name, audio_name + '_restored.wav'))
 
