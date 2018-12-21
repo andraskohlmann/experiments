@@ -84,7 +84,7 @@ def audio_from_mel_spec(input_folder, filename):
 
     file = glob.glob(os.path.join(input_folder, '*' + '.png'))[0]
 
-    combined = cv2.imread(file, cv2.IMREAD_GRAYSCALE)
+    combined = cv2.imread(file, cv2.IMREAD_GRAYSCALE)[:, :512]
 
     # converting back to the original domain
     combined = (combined / 255. - 1) * spec_thresh
