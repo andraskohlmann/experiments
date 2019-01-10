@@ -30,7 +30,7 @@ decoder_setup = [
 model = conv_ae_2d(input_shape=(128, 128, 1), encoder_setup=encoder_setup, decoder_setup=decoder_setup)
 print(model.summary())
 
-batch_size = 16
+batch_size = 128
 image_generator = ImageSequence(os.path.join('out', 'segments', '*'), batch_size=batch_size)
 # d = image_generator[0]
 # print(d[0].shape)
@@ -40,8 +40,8 @@ model.compile(optimizer='adam', loss='mse')
 checkpoint_path = os.path.join('checkpoints', 'epoch-{epoch:02d}-{loss:.4f}.hdf5')
 checkpoint = ModelCheckpoint(checkpoint_path, monitor='loss', verbose=1, save_best_only=True, mode='min')
 
-# model.fit_generator(image_generator, epochs=20, callbacks=[])
-# model.save_weights(os.path.join('weights', 'model.h5'))
+model.fit_generator(image_generator, epochs=100, callbacks=[])
+model.save_weights(os.path.join('weights', 'model.h5'))
 
 model.load_weights(os.path.join('weights', 'model.h5'))
 

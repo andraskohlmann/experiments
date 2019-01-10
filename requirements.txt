@@ -1,0 +1,8 @@
+glob
+python-opencv
+numpy
+keras
+scikit-learn
+pydub
+tensorflow
+tensorflow-gpu
