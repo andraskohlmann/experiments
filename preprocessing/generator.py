@@ -4,7 +4,6 @@ import shutil
 
 import cv2
 import numpy as np
-from keras.utils import Sequence
 from scipy.io import wavfile
 
 from preprocessing.audio_import import (audio_to_array, get_files_from_library,
@@ -123,22 +122,3 @@ def restore_audio_from_images(input_folder_name, output_folder_name):
         audio_from_mel_spec(input_folder=in_dir,
                             filename=os.path.join('out', output_folder_name, audio_name + '_restored.wav'))
 
-
-class ImageSequence(Sequence):
-    def __init__(self, image_folders, batch_size):
-        self.files = sorted(glob.glob(os.path.join(image_folders, '*.png')))
-        self.batch_size = batch_size
-        self.images = [cv2.imread(self.files[i], cv2.IMREAD_GRAYSCALE) / 255. for i in range(len(self.files))]
-
-    def __len__(self):
-        return len(self.files) * 100 // self.batch_size
-
-    def random_crop(self, image):
-        h, w = image.shape[0:2]
-        start = np.random.randint(0, w - h)
-        return image[:, start:start + h]
-
-    def __getitem__(self, index):
-        images = np.expand_dims(np.array([self.random_crop(self.images[i % len(self.files)]) for i in
-                                          range(index * self.batch_size, (index + 1) * self.batch_size)]), -1)
-        return images, images

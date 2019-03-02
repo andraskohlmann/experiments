@@ -1,5 +1,5 @@
-from keras import Input, Model
-from keras.layers import LSTM, Reshape, TimeDistributed, Conv2D, Conv2DTranspose
+from tensorflow.python.keras import Input, Model
+from tensorflow.python.keras.layers import LSTM, Reshape, TimeDistributed, Conv2D, Conv2DTranspose
 
 
 def encoder(input_layer, encoder_setup, trainable=True):

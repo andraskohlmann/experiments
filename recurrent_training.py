@@ -3,6 +3,8 @@ def train():
 
     # Create tensorflow graph
 
+    # Load weights
+
     epochs = 100
     for epoch in range(epochs):
         # Training loop
