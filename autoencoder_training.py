@@ -1,6 +1,6 @@
 import tensorflow as tf
+from tensorflow.contrib.losses import mean_squared_error
 from tensorflow.contrib.optimizer_v2.gradient_descent import GradientDescentOptimizer
-from tensorflow.python.ops.metrics_impl import mean_squared_error
 import tqdm
 from data_processing.batch_generation import random_images_from_spectograms
 from model.autoencoder import conv_ae_2d
@@ -45,6 +45,7 @@ def train():
         for epoch in range(epochs):
             # Training loop
             sess.run(training_init_op)
+            sess.run(tf.global_variables_initializer())
             with tqdm.trange(10) as t:
                 for i in t:
                     # Description will be displayed on the left
