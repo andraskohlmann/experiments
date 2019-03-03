@@ -1,4 +1,4 @@
-from tensorflow.python.keras import Input, Model
+from tensorflow.python.keras import Input
 from tensorflow.python.keras.layers import LSTM, Reshape, TimeDistributed, Conv2D, Conv2DTranspose
 
 
@@ -18,15 +18,12 @@ def decoder(input_layer, decoder_setup, trainable=True):
     return x
 
 
-def conv_ae_2d(input_shape, encoder_setup, decoder_setup):
-    input_layer = Input(shape=input_shape)
-    encoded = encoder(input_layer, encoder_setup)
+def conv_ae_2d(input_tensor, encoder_setup, decoder_setup):
+    encoded = encoder(input_tensor, encoder_setup)
     encoded = Conv2D(4, 3, padding='same')(encoded)
     decoded = decoder(encoded, decoder_setup)
     decoded = Conv2D(1, 1, activation='sigmoid', padding='same')(decoded)
-
-    ae = Model(input_layer, decoded)
-    return ae
+    return decoded
 
 
 def encoder_td(input_layer, encoder_setup, trainable=True):
@@ -51,6 +48,4 @@ def conv_lstm_ae_1d(timesteps, input_shape, encoder_setup, lstm_num, decoder_set
     lstm = Reshape(encoded_shape)(lstm)
     decoded = decoder(lstm, decoder_setup, trainable=False)
     decoded = Conv2D(1, 1, activation='sigmoid', padding='same', trainable=False)(decoded)
-
-    ae = Model(input_layer, decoded)
-    return ae
+    return decoded
